@@ -34,3 +34,27 @@ def handle_event(event):
                     print(f"[+] {key}: {value}")
     except Exception:
         del(txn)
+
+async def log_loop(event_filter, poll_interval):
+    while True:
+        for event in event_filter.get_new_entries():
+            handle_event(event)
+        
+        await asyncio.sleep(poll_interval)
+
+def filter_pool(filter_type):
+    txn_filter = w3.eth.filter(filter_type)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    try:
+        asyncio.run(log_loop(txn_filter, 2))
+    finally:
+        loop.close()
+        asyncio.set_event_loop(None)
+
+def main():
+    filter_pool("pending")
+
+if __name__ == "__main__":
+    main()
