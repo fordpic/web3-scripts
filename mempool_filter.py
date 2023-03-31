@@ -1,11 +1,13 @@
-# This example is taken from the web3py docs, with an added 'to' filter
+# This is an extended and modified example taken from the web3py docs && CryptoMarketPool 
+# It contains an added 'to' filter & a few modifications; currently only filtering for transactions to Uniswap v2 router, though the filter os constructed in a way to scale appropriately if need be
+# # It also includes a decoding example for input data + has been updated to set loop & use run(); this removes the deprecation warnings
 
-# Includes a decoding example for input data + has been updated to set loop & use run(); this removes the deprecation warnings
+# https://cryptomarketpool.com/how-to-query-the-ethereum-mempool-txpool-with-python/ 
 
-# MEMPOOL FILTER => scans mempool for transactions to a Uniswap v2 router
+# MEMPOOL FILTER
+# Scans mempool for transactions to Uniswap v2 router
 from web3 import Web3
 import asyncio
-import json
 
 endpoint = "~/.ethereum/geth/geth.ipc"
 w3 = Web3(Web3.IPCProvider(endpoint))
@@ -20,9 +22,12 @@ uniswap = w3.eth.contract(address=UNISWAP_ADDY, abi=UNISWAP_ABI)
 
 def handle_event(event):
     try:
-        txn = w3.to_json(event).strip('"')
+        # Parse txn hash
+        txn = Web3.to_json(event).strip('"')
+        # Grab txn using hash
         txn = w3.eth.get_transaction(txn)
 
+        # Only filtering for txns to Uniswap v2 router, but could add more checks for routers here if desired
         if txn["to"] == UNISWAP_ADDY:
             print("[x] ----------------------------------------------------------------------------------------- -  -  -")
             for key, value in txn.items():
@@ -42,6 +47,7 @@ async def log_loop(event_filter, poll_interval):
         
         await asyncio.sleep(poll_interval)
 
+# Filter for pending txns
 def filter_pool(filter_type):
     txn_filter = w3.eth.filter(filter_type)
     loop = asyncio.new_event_loop()
